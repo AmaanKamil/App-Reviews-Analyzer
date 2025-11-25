@@ -1,0 +1,10 @@
+pandas
+scikit-learn
+textblob
+streamlit
+plotly
+nltk
+openai
+schedule
+python-dotenv
+markdown

@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.DS_Store
+*.pyc
+email_draft.txt
+weekly_report_*.txt
+.venv
