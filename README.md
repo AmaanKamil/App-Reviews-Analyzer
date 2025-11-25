@@ -37,3 +37,10 @@ streamlit run app.py
 - `insights.py`: Logic for generating themes, quotes, and action ideas.
 - `mailer.py`: Email draft formatting.
 - `groww_reviews.json`: Dataset.
+
+
+# Latest mail screenshot
+![Screenshot 1](images/1.png)
+![Screenshot 2](images/2.png)
+![Screenshot 3](images/3.png)
+
