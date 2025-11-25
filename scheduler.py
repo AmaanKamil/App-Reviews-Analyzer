@@ -95,14 +95,15 @@ def job():
     else:
         print("Job finished with errors (Email failed).")
 
-# Schedule the job
-schedule.every().monday.at("09:00").do(job)
+if __name__ == "__main__":
+    # Schedule the job
+    schedule.every().monday.at("09:00").do(job)
 
-print("Scheduler started.")
-print("Running immediate test job...")
-job() # Run immediately for verification
+    print("Scheduler started.")
+    print("Running immediate test job...")
+    job() # Run immediately for verification
 
-print("Waiting for next scheduled job...")
-while True:
-    schedule.run_pending()
-    time.sleep(60)
+    print("Waiting for next scheduled job...")
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
