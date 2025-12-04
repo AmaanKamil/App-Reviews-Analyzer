@@ -6,6 +6,7 @@ from mailer import EmailDraft
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from scraper import scrape_reviews
 
 load_dotenv()
 
@@ -16,6 +17,12 @@ def job():
     if not os.getenv("EMAIL_USER") or not os.getenv("EMAIL_PASSWORD"):
         print("ERROR: EMAIL_USER or EMAIL_PASSWORD not found in .env. Cannot send email.")
         return
+
+    # 0. Scrape Fresh Data
+    try:
+        scrape_reviews()
+    except Exception as e:
+        print(f"Warning: Scraper failed ({e}). Proceeding with existing data if available.")
 
     # 1. Load and Filter Data (Last 7 days)
     processor = ReviewProcessor("groww_reviews.json")

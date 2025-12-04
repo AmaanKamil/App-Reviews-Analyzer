@@ -24,10 +24,11 @@ class ReviewProcessor:
             return None
 
     def filter_recent(self, weeks=12):
-        """Filters reviews for the most recent 'weeks'."""
+        """Filters reviews for the most recent 'weeks' relative to today."""
         if self.df is not None:
-            max_date = self.df['Published'].max()
-            cutoff_date = max_date - timedelta(weeks=weeks)
+            # Use current time as reference, not the last data point
+            reference_date = datetime.now()
+            cutoff_date = reference_date - timedelta(weeks=weeks)
             self.df = self.df[self.df['Published'] >= cutoff_date].copy()
             return self.df
         return None

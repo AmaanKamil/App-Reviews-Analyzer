@@ -19,7 +19,7 @@ if not os.getenv("EMAIL_USER") or not os.getenv("EMAIL_PASSWORD"):
 # Sidebar for controls
 st.sidebar.header("Configuration")
 data_file = "groww_reviews.json"
-weeks_to_analyze = st.sidebar.slider("Weeks to Analyze", min_value=1, max_value=24, value=12)
+weeks_to_analyze = 12
 
 @st.cache_data
 def load_and_process_data(file_path, weeks):

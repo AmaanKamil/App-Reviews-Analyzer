@@ -9,3 +9,4 @@ schedule
 python-dotenv
 markdown
 kaleido
+google-play-scraper
