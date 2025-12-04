@@ -96,11 +96,11 @@ def job():
     mailer.save_draft(draft, filename=f"weekly_report_{datetime.now().date()}.txt")
     
     dashboard_url = os.getenv("DASHBOARD_URL", "http://localhost:8501")
-    success = mailer.send_email(subject, report, image_paths=image_paths, dashboard_url=dashboard_url)
+    success, msg = mailer.send_email(subject, report, image_paths=image_paths, dashboard_url=dashboard_url)
     if success:
         print("Job finished successfully.")
     else:
-        print("Job finished with errors (Email failed).")
+        print(f"Job finished with errors (Email failed: {msg}).")
 
 if __name__ == "__main__":
     # Schedule the job

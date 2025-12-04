@@ -127,10 +127,10 @@ This is an automated weekly report.
                 server.send_message(msg)
             
             print(f"Email sent successfully to {self.recipient}")
-            return True
+            return True, f"Email sent successfully to {self.recipient}"
         except smtplib.SMTPAuthenticationError:
             print("ERROR: Authentication failed. Check your EMAIL_USER and EMAIL_PASSWORD.")
-            return False
+            return False, "Authentication failed. Please check your App Password in .env."
         except Exception as e:
             print(f"Failed to send email: {e}")
-            return False
+            return False, f"Failed to send email: {str(e)}"

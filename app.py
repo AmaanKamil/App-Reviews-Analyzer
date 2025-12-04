@@ -91,8 +91,36 @@ if os.path.exists(data_file):
             
             # Display Report Beautifully
             st.markdown("### 📝 Generated Weekly Note")
-            with st.container(border=True):
-                st.markdown(weekly_note)
+            
+            # Custom CSS for the report
+            st.markdown("""
+            <style>
+            .report-card {
+                background-color: #1E1E1E;
+                border: 1px solid #333;
+                border-radius: 10px;
+                padding: 25px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                font-family: 'Helvetica Neue', sans-serif;
+                color: #E0E0E0;
+            }
+            .report-card h3 {
+                color: #00d09c !important;
+                border-bottom: 1px solid #444;
+                padding-bottom: 10px;
+                margin-top: 20px;
+            }
+            .report-card strong {
+                color: #4da6ff;
+            }
+            .report-card em {
+                color: #aaa;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # Render report inside the styled div
+            st.markdown(f'<div class="report-card">{weekly_note}</div>', unsafe_allow_html=True)
             
             # Email Draft Section
             mailer = EmailDraft()
@@ -115,11 +143,11 @@ if os.path.exists(data_file):
                     # Note: We don't have generated images here in the manual flow easily available 
                     # unless we save them first. For now, we send text-only or we could generate them.
                     # To keep it simple and robust, we'll send the text report.
-                    success = mailer.send_email(subject, weekly_note)
+                    success, msg = mailer.send_email(subject, weekly_note)
                     if success:
-                        st.success("Email sent successfully! Check your inbox.")
+                        st.success(msg)
                     else:
-                        st.error("Failed to send email. Please check your terminal logs for details (likely auth error).")
+                        st.error(f"Failed to send email: {msg}")
             
             # Download button
             st.download_button("Download Report as Markdown", weekly_note, file_name="weekly_report.md")
