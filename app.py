@@ -84,10 +84,16 @@ if os.path.exists(data_file):
         st.divider()
         st.header("Weekly Report Generation (AI Powered)")
         
+        if 'weekly_note' not in st.session_state:
+            st.session_state['weekly_note'] = None
+
         if st.button("Generate Weekly Report with AI", type="primary"):
             with st.spinner("Consulting LLM for insights..."):
                 llm = LLMService()
-                weekly_note = llm.generate_weekly_report(df)
+                st.session_state['weekly_note'] = llm.generate_weekly_report(df)
+            
+        if st.session_state['weekly_note']:
+            weekly_note = st.session_state['weekly_note']
             
             # Display Report Beautifully
             st.markdown("### 📝 Generated Weekly Note")
@@ -132,8 +138,9 @@ if os.path.exists(data_file):
             
             # Save option
             path = mailer.save_draft(email_draft)
-            if path:
-                st.toast(f"Draft saved to {path}", icon="✅")
+            # We don't want to toast on every rerun, so we can skip the toast here or manage it with state, 
+            # but for simplicity let's just save silently or only toast if it's a new save.
+            # For now, removing the toast on every render to avoid annoyance.
             
             # Send option (Manual trigger)
             st.divider()
