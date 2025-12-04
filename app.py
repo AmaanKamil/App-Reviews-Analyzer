@@ -6,6 +6,8 @@ from llm_service import LLMService
 from mailer import EmailDraft
 import os
 
+from scraper import scrape_reviews
+
 # Page Config
 st.set_page_config(page_title="App Review Insights Analyzer", layout="wide")
 
@@ -22,17 +24,31 @@ weeks_to_analyze = 1
 
 @st.cache_data
 def load_and_process_data(file_path, weeks):
+    # Check if file exists first
+    if not os.path.exists(file_path):
+        return None
+        
     processor = ReviewProcessor(file_path)
     df = processor.load_data()
     if df is not None:
         df = processor.filter_recent(weeks=weeks)
-        df = processor.add_sentiment()
-        
-        # Use LLM for theme extraction (cached)
-        llm = LLMService()
-        df = processor.extract_themes_llm(llm)
+        if df is not None and not df.empty:
+            df = processor.add_sentiment()
+            # Use LLM for theme extraction (cached)
+            llm = LLMService()
+            df = processor.extract_themes_llm(llm)
     return df
 
+# Top level Refresh Button
+col_header, col_refresh = st.columns([6, 1])
+with col_refresh:
+    if st.button("🔄 Refresh Data"):
+        with st.spinner("Fetching latest reviews..."):
+            scrape_reviews()
+            st.cache_data.clear()
+            st.rerun()
+
+# Load Data
 if os.path.exists(data_file):
     with st.spinner("Processing data and identifying themes with AI..."):
         df = load_and_process_data(data_file, weeks_to_analyze)
@@ -109,6 +125,17 @@ if os.path.exists(data_file):
             st.download_button("Download Report as Markdown", weekly_note, file_name="weekly_report.md")
 
     else:
-        st.warning("No data found for the last 7 days. Please ensure the scraper has run recently.")
+        st.warning("No data found for the last 7 days.")
+        st.info("The local data might be old. Click below to fetch the latest reviews from the Play Store.")
+        if st.button("🚀 Fetch Latest Reviews"):
+             with st.spinner("Scraping latest reviews..."):
+                scrape_reviews()
+                st.cache_data.clear()
+                st.rerun()
 else:
-    st.error(f"Data file '{data_file}' not found. Please ensure it is in the directory.")
+    st.error(f"Data file '{data_file}' not found.")
+    if st.button("🚀 Fetch Reviews to Start"):
+         with st.spinner("Scraping initial reviews..."):
+            scrape_reviews()
+            st.cache_data.clear()
+            st.rerun()
