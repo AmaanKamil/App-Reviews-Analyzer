@@ -16,10 +16,9 @@ st.markdown("Analyze Google Play Store reviews, extract themes, and generate wee
 if not os.getenv("EMAIL_USER") or not os.getenv("EMAIL_PASSWORD"):
     st.warning("⚠️ Email credentials not found in .env. Email sending will fail. Please add EMAIL_USER and EMAIL_PASSWORD.")
 
-# Sidebar for controls
-st.sidebar.header("Configuration")
+# Configuration (Hardcoded for Weekly Analysis)
 data_file = "groww_reviews.json"
-weeks_to_analyze = 12
+weeks_to_analyze = 1
 
 @st.cache_data
 def load_and_process_data(file_path, weeks):
@@ -40,7 +39,7 @@ if os.path.exists(data_file):
 
     if df is not None and not df.empty:
         # Dashboard
-        st.header("Dashboard")
+        st.header("Dashboard (Last 7 Days)")
         
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Reviews", len(df))
@@ -69,40 +68,47 @@ if os.path.exists(data_file):
         st.divider()
         st.header("Weekly Report Generation (AI Powered)")
         
-        if st.button("Generate Weekly Report with AI"):
+        if st.button("Generate Weekly Report with AI", type="primary"):
             with st.spinner("Consulting LLM for insights..."):
                 llm = LLMService()
                 weekly_note = llm.generate_weekly_report(df)
             
-            st.subheader("Weekly Note")
-            st.markdown(weekly_note)
+            # Display Report Beautifully
+            st.markdown("### 📝 Generated Weekly Note")
+            with st.container(border=True):
+                st.markdown(weekly_note)
             
-            # Email Draft
+            # Email Draft Section
             mailer = EmailDraft()
             subject = f"Weekly App Review Insights - Groww - {df['Published'].min().date()} to {df['Published'].max().date()}"
             email_draft = mailer.create_draft(subject, weekly_note)
             
-            st.subheader("Email Draft")
-            st.text_area("Copy this draft:", email_draft, height=300)
+            with st.expander("View Raw Email Draft"):
+                st.text_area("Copy this draft:", email_draft, height=200)
             
             # Save option
             path = mailer.save_draft(email_draft)
             if path:
-                st.success(f"Draft saved to {path}")
+                st.toast(f"Draft saved to {path}", icon="✅")
             
             # Send option (Manual trigger)
+            st.divider()
+            st.subheader("Actions")
             if st.button("Send Email Now"):
                 with st.spinner("Sending email..."):
+                    # Note: We don't have generated images here in the manual flow easily available 
+                    # unless we save them first. For now, we send text-only or we could generate them.
+                    # To keep it simple and robust, we'll send the text report.
                     success = mailer.send_email(subject, weekly_note)
                     if success:
-                        st.success("Email sent successfully!")
+                        st.success("Email sent successfully! Check your inbox.")
                     else:
-                        st.error("Failed to send email. Check console/logs and .env credentials.")
+                        st.error("Failed to send email. Please check your terminal logs for details (likely auth error).")
             
             # Download button
-            st.download_button("Download Report", weekly_note, file_name="weekly_report.md")
+            st.download_button("Download Report as Markdown", weekly_note, file_name="weekly_report.md")
 
     else:
-        st.warning("No data found for the selected period.")
+        st.warning("No data found for the last 7 days. Please ensure the scraper has run recently.")
 else:
     st.error(f"Data file '{data_file}' not found. Please ensure it is in the directory.")
