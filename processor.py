@@ -14,10 +14,13 @@ class ReviewProcessor:
     def load_data(self):
         """Loads the JSON data into a pandas DataFrame."""
         try:
-            with open(self.file_path, 'r') as f:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             self.df = pd.DataFrame(data)
             self.df['Published'] = pd.to_datetime(self.df['Published'], errors='coerce')
+            # Drop rows without text or a valid date; they break sampling/joins downstream
+            self.df = self.df.dropna(subset=['Review', 'Published'])
+            self.df = self.df[self.df['Review'].str.strip() != ''].copy()
             return self.df
         except Exception as e:
             print(f"Error loading data: {e}")
@@ -27,7 +30,9 @@ class ReviewProcessor:
         """Filters reviews for the most recent 'weeks' relative to today."""
         if self.df is not None:
             # Use current time as reference, not the last data point
-            reference_date = datetime.now()
+            # Dates are stored without time, so align the cutoff to midnight
+            # to include the whole boundary day.
+            reference_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             cutoff_date = reference_date - timedelta(weeks=weeks)
             self.df = self.df[self.df['Published'] >= cutoff_date].copy()
             return self.df
@@ -55,30 +60,30 @@ class ReviewProcessor:
         if self.df is not None and not self.df.empty:
             # 1. Get sample for theme identification
             sample_size = min(len(self.df), 50)
-            reviews_sample = self.df['Review'].sample(n=sample_size, random_state=42).tolist()
-            reviews_text = "\n- ".join(reviews_sample)
+            reviews_sample = self.df['Review'].astype(str).sample(n=sample_size, random_state=42).tolist()
+            reviews_text = "- " + "\n- ".join(reviews_sample)
             
             # 2. Identify themes
             themes_data = llm_service.identify_themes(reviews_text)
             themes = themes_data.get("themes", [])
             
             if not themes:
-                self.df['Theme'] = "General"
+                self.df['Theme'] = "General / Uncategorized"
                 return self.df
             
             # 3. Classify reviews
             def classify_review(text):
                 if not isinstance(text, str):
-                    return "Uncategorized"
+                    return "General / Uncategorized"
                 text_lower = text.lower()
                 best_theme = "General / Uncategorized"
                 max_matches = 0
                 
                 for theme in themes:
-                    matches = sum(1 for kw in theme['keywords'] if kw.lower() in text_lower)
+                    matches = sum(1 for kw in theme.get('keywords', []) if isinstance(kw, str) and kw.lower() in text_lower)
                     if matches > max_matches:
                         max_matches = matches
-                        best_theme = theme['name']
+                        best_theme = theme.get('name', best_theme)
                 
                 return best_theme
 

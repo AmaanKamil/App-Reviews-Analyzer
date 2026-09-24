@@ -6,7 +6,7 @@ from mailer import EmailDraft
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from scraper import scrape_reviews
+from scraper import scrape_reviews, DATA_FILE
 
 load_dotenv()
 
@@ -25,7 +25,7 @@ def job():
         print(f"Warning: Scraper failed ({e}). Proceeding with existing data if available.")
 
     # 1. Load and Filter Data (Last 7 days)
-    processor = ReviewProcessor("groww_reviews.json")
+    processor = ReviewProcessor(DATA_FILE)
     df = processor.load_data()
     if df is None:
         print("Failed to load data.")
@@ -33,7 +33,7 @@ def job():
 
     df = processor.filter_recent(weeks=1)
     
-    if df.empty:
+    if df is None or df.empty:
         print("No reviews found for the last week.")
         return
 

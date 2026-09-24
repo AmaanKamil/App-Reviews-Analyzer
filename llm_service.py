@@ -12,6 +12,7 @@ class LLMService:
         if not api_key:
             raise ValueError("OPENAI_API_KEY not found in environment variables.")
         self.client = OpenAI(api_key=api_key)
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o")
 
     def analyze_reviews(self, reviews_text):
         """
@@ -42,7 +43,7 @@ class LLMService:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt}
@@ -50,7 +51,9 @@ class LLMService:
                 max_tokens=1000,
                 temperature=0.7
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content or ""
+            # Models sometimes wrap markdown in code fences, which renders as a code block
+            return content.replace("```markdown", "").replace("```", "").strip()
         except Exception as e:
             return f"Error analyzing reviews with LLM: {e}"
 
@@ -77,7 +80,7 @@ class LLMService:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that outputs JSON."},
                     {"role": "user", "content": prompt}
@@ -98,9 +101,9 @@ class LLMService:
         if df is None or df.empty:
             return "No reviews available for analysis."
         
-        sample_size = min(len(df), 100)
-        reviews_sample = df['Review'].sample(n=sample_size, random_state=42).tolist()
-        reviews_text = "\n- ".join(reviews_sample)
+        sample_size = min(df['Review'].notna().sum(), 100)
+        reviews_sample = df['Review'].dropna().astype(str).sample(n=sample_size, random_state=42).tolist()
+        reviews_text = "- " + "\n- ".join(reviews_sample)
         
         report_body = self.analyze_reviews(reviews_text)
         
